@@ -6,19 +6,19 @@
   <meta name="theme-color" content="#174f45">
   <meta name="description" content="Dein privater Gewichtsverlauf. Ein kleiner Eintrag für einen klaren Überblick.">
   <title>Gewichtsverlauf · Dein Überblick</title>
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="stylesheet" href="/styles.css">
-  <script type="module" src="/app.js"></script>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
 </head>
 <body>
   <header class="header wrap">
-    <a class="brand" href="/" aria-label="Gewichtsverlauf Startseite"><img src="/icons/icon.svg" alt="" width="38" height="38"><span>Gewichtsverlauf<span class="brand-sub">Ein Moment für dich.</span></span></a>
-    <div class="header-actions"><button class="button quiet small" id="install" aria-label="App installieren"><span class="install-label">App installieren</span><svg class="install-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg></button><button class="icon-button" id="logout" aria-label="Abmelden" title="Abmelden"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 4H4v16h6m4-13 5 5-5 5M9 12h10"/></svg></button></div>
+    <a class="brand" href="./" aria-label="Gewichtsverlauf Startseite"><img src="./icons/icon.svg" alt="" width="38" height="38"><span>Gewichtsverlauf<span class="brand-sub">Ein Moment für dich.</span></span></a>
+    <div class="header-actions"><button class="button quiet small" id="install" aria-label="App installieren"><span class="install-label">App installieren</span><svg class="install-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg></button></div>
   </header>
   <main class="wrap">
-    <div class="topline"><span class="eyebrow"><span class="status-dot"></span> DEIN PRIVATER BEREICH</span><span id="today-label" class="muted"></span></div>
+    <div class="topline"><span class="eyebrow"><span class="status-dot"></span> NUR AUF DIESEM GERÄT</span><span id="today-label" class="muted"></span></div>
     <nav class="tabs" aria-label="Ansicht"><button id="tab-entry" class="tab active" aria-current="page">Gewicht eintragen</button><button id="tab-history" class="tab">Mein Verlauf <span id="count" class="count">0</span></button></nav>
     <div id="loading" class="loading" role="status">Dein Verlauf wird geladen …</div>
     <section id="entry-view" hidden aria-labelledby="entry-heading">
@@ -32,7 +32,7 @@
           <p id="existing-note" class="existing-note" hidden></p>
           <p id="form-error" class="error" role="alert" hidden></p>
           <button class="button primary full" id="save" type="submit">Eintrag speichern <span aria-hidden="true">→</span></button>
-          <p class="privacy-note"><span aria-hidden="true">◈</span> Nur du hast Zugriff auf deine Einträge.</p>
+          <p class="privacy-note"><span aria-hidden="true">◈</span> Deine Einträge bleiben auf diesem Gerät.</p>
         </form>
       </div>
       <aside class="latest-strip" id="latest-strip" hidden><div><span class="eyebrow">LETZTER EINTRAG</span><strong id="last-weight"></strong><span id="last-date" class="muted"></span></div><button class="text-button" id="show-history">Verlauf ansehen <span aria-hidden="true">↗</span></button></aside>
@@ -47,9 +47,16 @@
         <div class="card table-card"><table><caption class="sr-only">Alle gespeicherten Gewichtseinträge, neueste zuerst</caption><thead><tr><th scope="col">Datum</th><th scope="col">Gewicht</th><th scope="col"><span class="sr-only">Aktionen</span></th></tr></thead><tbody id="entries"></tbody></table></div>
       </div>
     </section>
+    <aside class="storage-panel card" aria-labelledby="storage-heading">
+      <h2 id="storage-heading">Deine Daten bleiben bei dir.</h2>
+      <p id="storage-status" class="muted">Deine Einträge werden auf diesem Gerät gespeichert.</p>
+      <p class="muted storage-detail">Kein Upload und keine Anmeldung. Das Löschen aller Websitedaten löscht auch deine Einträge. Eine Sicherung kannst du hier herunterladen und später wieder laden.</p>
+      <div class="backup-actions"><button class="button quiet small" id="backup">Sicherung herunterladen</button><button class="button quiet small" id="restore">Sicherung laden</button><button class="text-button" id="persist" hidden>Speicher schützen</button></div>
+      <input type="file" id="backup-file" accept=".json,application/json" hidden>
+    </aside>
     <div id="global-error" class="error global-error" role="alert" hidden></div>
   </main>
-  <footer class="wrap footer"><span>Dein Gewicht. Dein Überblick.</span><span>Privat gespeichert · Mit GitHub angemeldet</span></footer>
+  <footer class="wrap footer"><span>Dein Gewicht. Dein Überblick.</span><span>Lokal gespeichert · Auch offline verfügbar</span></footer>
   <div id="toast" class="toast" role="status" hidden></div>
   <dialog id="confirm-dialog"><form method="dialog"><h2 id="confirm-title"></h2><p id="confirm-text"></p><div class="dialog-actions"><button class="button quiet" value="cancel">Abbrechen</button><button class="button primary" id="confirm-button" value="confirm">Bestätigen</button></div></form></dialog>
   <dialog id="install-dialog"><h2>Dein Überblick auf dem Homescreen.</h2><p>Öffne in Chrome oder Brave das Menü <strong>⋮</strong> und wähle <strong>„App installieren“</strong> oder <strong>„Zum Startbildschirm hinzufügen“</strong>.</p><p class="muted">Auf einem Computer findest du die Installation gegebenenfalls rechts in der Adressleiste.</p><button class="button primary full" id="close-install">Verstanden</button></dialog>

@@ -1,7 +1,8 @@
 import { drawChart, dayTime } from './chart.js';
+import { listEntries, saveEntry, deleteEntry, parseBackup, importEntries } from './storage.js';
 
 const $ = selector => document.querySelector(selector);
-const state = { entries: [], csrf: '', range: 'all', view: 'entry', busy: false };
+const state = { entries: [], range: 'all', view: 'entry', busy: false };
 const weightFormat = weight => weight.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const dateFormat = (day, long = false) => new Date(dayTime(day)).toLocaleDateString('de-DE', { timeZone: 'UTC', day: '2-digit', month: long ? 'long' : '2-digit', year: 'numeric' });
 const today = () => {
@@ -17,31 +18,11 @@ $('#install').addEventListener('click', async () => {
   else $('#install-dialog').showModal();
 });
 $('#close-install').addEventListener('click', () => $('#install-dialog').close());
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
-async function api(path, options = {}) {
-  let result;
-  try {
-    result = await fetch(path, {
-      ...options, credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(20000),
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': state.csrf, ...options.headers },
-    });
-  } catch {
-    throw new Error('Der Server ist gerade nicht erreichbar. Bitte prüfe deine Verbindung und versuche es erneut.');
-  }
-  if (result.status === 401) {
-    location.assign('/');
-    throw new Error('Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.');
-  }
-  let body;
-  try { body = await result.json(); }
-  catch { throw new Error('Der Server ist gerade nicht erreichbar. Bitte versuche es gleich noch einmal.'); }
-  if (!result.ok) throw new Error(body.error || 'Das hat leider nicht geklappt. Bitte versuche es erneut.');
-  return body;
-}
 function showError(error, selector = '#global-error') {
   const target = $(selector);
-  target.textContent = navigator.onLine ? error.message : 'Du bist gerade offline. Bitte stelle die Internetverbindung wieder her und versuche es erneut.';
+  target.textContent = error.message;
   target.hidden = false;
 }
 function clearErrors() { $('#global-error').hidden = true; $('#form-error').hidden = true; }
@@ -66,7 +47,7 @@ function setView(view, { focus = false } = {}) {
     tab.classList.toggle('active', name === view);
     if (name === view) tab.setAttribute('aria-current', 'page'); else tab.removeAttribute('aria-current');
   }
-  history.replaceState(null, '', view === 'history' ? '/#verlauf' : '/');
+  history.replaceState(null, '', view === 'history' ? '#verlauf' : location.pathname);
   if (view === 'history') renderChart();
   if (focus) {
     if (view === 'entry') $('#weight').focus();
@@ -106,7 +87,7 @@ $('#weight-form').addEventListener('submit', async event => {
     const previous = state.entries.find(entry => entry.day === day);
     if (previous && !await confirm('Eintrag ersetzen?', `Am ${dateFormat(day)} sind ${weightFormat(previous.weight)} kg gespeichert. Möchtest du diesen Wert durch ${weightFormat(number)} kg ersetzen?`, 'Ersetzen')) return;
     $('#save').disabled = true; $('#save').textContent = 'Wird gespeichert …';
-    const { entry } = await api(`/api/entries/${day}`, { method: 'PUT', body: JSON.stringify({ weight }) });
+    const entry = await saveEntry(day, weight);
     state.entries = [...state.entries.filter(item => item.day !== day), entry].sort((a, b) => a.day.localeCompare(b.day));
     render(); setView('history', { focus: true }); window.scrollTo({ top: 0, behavior: 'instant' }); toast('Dein Gewicht wurde gespeichert.');
   } catch (error) { showError(error, '#form-error'); }
@@ -157,7 +138,7 @@ function render() {
       try {
         if (!await confirm('Eintrag löschen?', `Möchtest du den Eintrag vom ${dateFormat(entry.day)} mit ${weightFormat(entry.weight)} kg endgültig löschen?`, 'Löschen')) return;
         remove.disabled = true;
-        await api(`/api/entries/${entry.day}`, { method: 'DELETE' });
+        await deleteEntry(entry.day);
         state.entries = state.entries.filter(item => item.day !== entry.day); render(); toast('Der Eintrag wurde gelöscht.');
       } catch (error) { showError(error); }
       finally { state.busy = false; remove.disabled = false; }
@@ -173,18 +154,12 @@ $('#export').addEventListener('click', () => {
   const link = document.createElement('a'); link.href = url; link.download = `gewichtsverlauf-${today()}.csv`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
-$('#logout').addEventListener('click', async () => {
-  if (state.busy || !state.csrf) return;
-  try { await api('/api/logout', { method: 'POST' }); location.assign('/'); }
-  catch (error) { showError(error); }
-});
-
 async function start() {
   $('#today-label').textContent = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
   $('#day').value = today(); $('#day').max = today();
   try {
-    const session = await api('/api/session'); state.csrf = session.csrfToken;
-    const { entries } = await api('/api/entries'); state.entries = entries;
+    state.entries = await listEntries();
+    await updateStorageStatus();
     render(); $('#loading').hidden = true; setView(location.hash === '#verlauf' ? 'history' : 'entry');
   } catch (error) {
     $('#loading').hidden = true; showError(error);
@@ -192,4 +167,53 @@ async function start() {
     retry.addEventListener('click', () => location.reload()); $('#global-error').append(document.createElement('br'), retry);
   }
 }
+
+async function updateStorageStatus() {
+  let persistent = false;
+  try { persistent = await navigator.storage?.persisted?.() || false; } catch {}
+  $('#storage-status').textContent = persistent
+    ? 'Der Browser schützt deinen lokalen Speicher vor automatischem Aufräumen.'
+    : 'Deine Einträge liegen in einer lokalen Datenbank auf diesem Gerät. Lade regelmäßig eine Sicherung herunter.';
+  $('#persist').hidden = persistent || !navigator.storage?.persist;
+}
+$('#persist').addEventListener('click', async () => {
+  try {
+    const granted = await navigator.storage.persist();
+    await updateStorageStatus();
+    toast(granted ? 'Dauerhafte Speicherung wurde bestätigt.' : 'Der Browser hat den Speicherschutz noch nicht zugesichert. Eine Sicherung bleibt empfehlenswert.');
+  } catch (error) { showError(error); }
+});
+function download(text, type, filename) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$('#backup').addEventListener('click', async () => {
+  try {
+    const entries = await listEntries();
+    download(JSON.stringify({ format: 'gewichtsverlauf', version: 1, entries: entries.map(({ day, weight }) => ({ day, weight })) }, null, 2),
+      'application/json', `gewichtsverlauf-sicherung-${today()}.json`);
+  } catch (error) { showError(error); }
+});
+$('#restore').addEventListener('click', () => $('#backup-file').click());
+$('#backup-file').addEventListener('change', async event => {
+  const file = event.target.files[0]; event.target.value = '';
+  if (!file || state.busy) return;
+  state.busy = true; clearErrors();
+  try {
+    if (file.size > 2 * 1024 * 1024) throw new Error('Diese Datei ist zu groß. Bitte wähle eine Sicherung dieser App.');
+    const rows = parseBackup(await file.text());
+    if (!rows.length) throw new Error('Diese Sicherung enthält keine Einträge.');
+    if (!await confirm('Sicherung laden?', `${rows.length} Einträge werden auf diesem Gerät gespeichert. Neue Tage werden ergänzt; für Tage aus der Sicherung werden vorhandene Werte ersetzt.`, 'Sicherung laden')) return;
+    await importEntries(rows); state.entries = await listEntries(); render(); setView('history'); toast('Die Sicherung wurde wiederhergestellt.');
+  } catch (error) { showError(error); }
+  finally { state.busy = false; }
+});
+// Another tab may have saved a value. Reload the database when returning here.
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && !state.busy) {
+    try { state.entries = await listEntries(); render(); } catch (error) { showError(error); }
+  }
+});
+
 start();

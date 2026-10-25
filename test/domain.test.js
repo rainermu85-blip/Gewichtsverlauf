@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseWeight, validDay } from '../src/domain.js';
+import { parseWeight, validDay } from '../public/data.js';
 import { chartGeometry, dayTime } from '../public/chart.js';
 
 test('Gewichte: Komma/Punkt, eine Nachkommastelle und exakte Zehntel', () => {
@@ -46,4 +46,14 @@ test('Ein einzelner Wert hat eine endliche, zentrierte Position', () => {
   assert.ok(Number.isFinite(chart.points[0].x) && Number.isFinite(chart.points[0].y));
   assert.equal(chart.points[0].x, (chart.left + chart.width - chart.right) / 2);
   assert.equal(chart.labels.length, 1);
+});
+
+
+import { parseBackup } from '../public/storage.js';
+test('Sicherungen werden vollständig geprüft, bevor Daten geändert werden', () => {
+  const backup = entries => JSON.stringify({ format: 'gewichtsverlauf', version: 1, entries });
+  assert.equal(parseBackup(backup([{ day: '2026-01-01', weight: 79.3 }]))[0].weightTenths, 793);
+  for (const text of ['kaputt', '{}', backup([{ day: '2026-02-30', weight: 79.3 }]), backup([{ day: '2026-01-01', weight: 79.33 }]), backup([{ day: '2026-01-01', weight: 79.3 }, { day: '2026-01-01', weight: 80 }])]) {
+    assert.throws(() => parseBackup(text));
+  }
 });

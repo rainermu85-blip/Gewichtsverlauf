@@ -1,19 +1,12 @@
 {
   "name": "gewichtsverlauf",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "setup": "node scripts/setup.mjs",
-    "dev": "wrangler dev --ip 0.0.0.0",
+    "dev": "node scripts/dev.mjs",
     "test": "node --test test/*.test.js",
-    "check": "node --check src/worker.js && node --check public/app.js && node --check public/chart.js && node --check public/sw.js && node --check scripts/setup.mjs && npm test && wrangler deploy --dry-run --outdir .build",
-    "db:local": "wrangler d1 migrations apply DB --local",
-    "db:remote": "wrangler d1 migrations apply DB --remote",
-    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy"
-  },
-  "devDependencies": {
-    "wrangler": "^4.0.0"
+    "check": "node --check public/app.js && node --check public/storage.js && node --check public/chart.js && node --check public/sw.js && npm test"
   },
   "engines": { "node": ">=22" }
 }

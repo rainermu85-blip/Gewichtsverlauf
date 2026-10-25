@@ -8,3 +8,5 @@
 .icon-button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.install-icon{display:none}
 @media(max-width:600px){.header-actions .small>.install-label{display:inline}}
 @media(max-width:380px){.header-actions .small>.install-label{display:none}.header-actions .small{width:33px;height:33px;padding:0}.install-icon{display:block}}
+
+.storage-panel{padding:24px;margin-top:30px}.storage-panel h2{font-size:15px}.storage-panel p{font-size:12px;margin:12px 0}.storage-panel .storage-detail{font-size:11px;max-width:780px}.backup-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.storage-panel .small{white-space:normal}.backup-actions .text-button{margin-left:5px}
