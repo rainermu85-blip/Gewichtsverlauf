@@ -1,0 +1,5 @@
+# Nur für lokale Entwicklung. Als .dev.vars kopieren (wird nicht eingecheckt).
+# Für localhost eine eigene GitHub-OAuth-App anlegen.
+APP_ORIGIN=http://localhost:8787
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#174f45">
+  <meta name="description" content="Dein privater Gewichtsverlauf. Ein kleiner Eintrag für einen klaren Überblick.">
+  <title>Gewichtsverlauf · Dein Überblick</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="header wrap">
+    <a class="brand" href="/" aria-label="Gewichtsverlauf Startseite"><img src="/icons/icon.svg" alt="" width="38" height="38"><span>Gewichtsverlauf<span class="brand-sub">Ein Moment für dich.</span></span></a>
+    <div class="header-actions"><button class="button quiet small" id="install" aria-label="App installieren"><span class="install-label">App installieren</span><svg class="install-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg></button><button class="icon-button" id="logout" aria-label="Abmelden" title="Abmelden"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 4H4v16h6m4-13 5 5-5 5M9 12h10"/></svg></button></div>
+  </header>
+  <main class="wrap">
+    <div class="topline"><span class="eyebrow"><span class="status-dot"></span> DEIN PRIVATER BEREICH</span><span id="today-label" class="muted"></span></div>
+    <nav class="tabs" aria-label="Ansicht"><button id="tab-entry" class="tab active" aria-current="page">Gewicht eintragen</button><button id="tab-history" class="tab">Mein Verlauf <span id="count" class="count">0</span></button></nav>
+    <div id="loading" class="loading" role="status">Dein Verlauf wird geladen …</div>
+    <section id="entry-view" hidden aria-labelledby="entry-heading">
+      <div class="entry-layout">
+        <div class="intro"><span class="eyebrow">DEIN TÄGLICHER CHECK-IN</span><h1 id="entry-heading">Wie viel wiegst <br>du heute?</h1><p>Eine Zahl, ein Moment. <br>Behalte deine Entwicklung im Blick.</p><div class="intro-note"><span aria-hidden="true">✧</span><p>Am besten immer zur gleichen Tageszeit wiegen. So lassen sich deine Einträge gut vergleichen.</p></div></div>
+        <form id="weight-form" class="card entry-card" novalidate>
+          <label class="field-label" for="weight">Dein Gewicht</label>
+          <div class="weight-field"><input id="weight" name="weight" type="text" inputmode="decimal" placeholder="00,0" autocomplete="off" spellcheck="false" maxlength="5" aria-describedby="weight-help" required><span>kg</span></div>
+          <p id="weight-help" class="field-help">Mit einer Nachkommastelle, zum Beispiel 78,4.</p>
+          <div class="date-field"><label for="day">Datum</label><input id="day" name="day" type="date" required min="2000-01-01"></div>
+          <p id="existing-note" class="existing-note" hidden></p>
+          <p id="form-error" class="error" role="alert" hidden></p>
+          <button class="button primary full" id="save" type="submit">Eintrag speichern <span aria-hidden="true">→</span></button>
+          <p class="privacy-note"><span aria-hidden="true">◈</span> Nur du hast Zugriff auf deine Einträge.</p>
+        </form>
+      </div>
+      <aside class="latest-strip" id="latest-strip" hidden><div><span class="eyebrow">LETZTER EINTRAG</span><strong id="last-weight"></strong><span id="last-date" class="muted"></span></div><button class="text-button" id="show-history">Verlauf ansehen <span aria-hidden="true">↗</span></button></aside>
+    </section>
+    <section id="history-view" hidden aria-labelledby="history-heading">
+      <div class="section-heading"><div><span class="eyebrow">SCHRITT FÜR SCHRITT</span><h1 id="history-heading">Deine Entwicklung.</h1><p class="muted">Jeder Eintrag ist ein Teil deines Weges.</p></div><button class="button primary" id="new-entry">+ Gewicht eintragen</button></div>
+      <div id="empty-state" class="card empty-state" hidden><span class="empty-icon" aria-hidden="true">↗</span><h2>Dein Verlauf beginnt hier.</h2><p>Trage dein erstes Gewicht ein.<br>Danach siehst du hier deine Entwicklung.</p><button class="button primary" id="first-entry">Ersten Eintrag hinzufügen</button></div>
+      <div id="history-content" hidden>
+        <div class="stats"><div class="card stat"><span class="field-label">Letztes Gewicht</span><strong id="stat-current"></strong><span class="muted" id="stat-date"></span></div><div class="card stat"><span class="field-label">Seit dem ersten Eintrag</span><strong id="stat-change"></strong><span class="muted" id="stat-start"></span></div><div class="card stat"><span class="field-label">Gesammelte Einträge</span><strong id="stat-count"></strong><span class="muted">Ein kleiner Moment, der zählt.</span></div></div>
+        <div class="card chart-card"><div class="chart-heading"><div><h2>Dein Gewichtsverlauf</h2><p class="muted" id="chart-caption">Die Abstände entsprechen den tatsächlichen Tagen.</p></div><div class="ranges" role="group" aria-label="Zeitraum"><button data-range="30" aria-pressed="false">30 T</button><button data-range="90" aria-pressed="false">90 T</button><button data-range="365" aria-pressed="false">1 J</button><button class="selected" data-range="all" aria-pressed="true">Alle</button></div></div><div id="chart" class="chart" aria-label="Gewichtsverlauf"></div><p class="chart-note"><span class="legend-dot"></span> Gewicht in kg <span class="chart-note-right">Y-Achse automatisch angepasst</span></p></div>
+        <div class="entries-heading"><h2>Deine Einträge <span class="count" id="list-count"></span></h2><button id="export" class="text-button">Daten exportieren <span aria-hidden="true">↓</span></button></div>
+        <div class="card table-card"><table><caption class="sr-only">Alle gespeicherten Gewichtseinträge, neueste zuerst</caption><thead><tr><th scope="col">Datum</th><th scope="col">Gewicht</th><th scope="col"><span class="sr-only">Aktionen</span></th></tr></thead><tbody id="entries"></tbody></table></div>
+      </div>
+    </section>
+    <div id="global-error" class="error global-error" role="alert" hidden></div>
+  </main>
+  <footer class="wrap footer"><span>Dein Gewicht. Dein Überblick.</span><span>Privat gespeichert · Mit GitHub angemeldet</span></footer>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="confirm-dialog"><form method="dialog"><h2 id="confirm-title"></h2><p id="confirm-text"></p><div class="dialog-actions"><button class="button quiet" value="cancel">Abbrechen</button><button class="button primary" id="confirm-button" value="confirm">Bestätigen</button></div></form></dialog>
+  <dialog id="install-dialog"><h2>Dein Überblick auf dem Homescreen.</h2><p>Öffne in Chrome oder Brave das Menü <strong>⋮</strong> und wähle <strong>„App installieren“</strong> oder <strong>„Zum Startbildschirm hinzufügen“</strong>.</p><p class="muted">Auf einem Computer findest du die Installation gegebenenfalls rechts in der Adressleiste.</p><button class="button primary full" id="close-install">Verstanden</button></dialog>
+</body>
+</html>

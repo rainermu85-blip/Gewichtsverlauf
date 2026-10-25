@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gewichtsverlauf",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-12-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "gewichtsverlauf",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }],
+  "vars": {
+    "APP_ORIGIN": "",
+    "GITHUB_CLIENT_ID": "",
+    "ALLOWED_GITHUB_ID": "260273876",
+    "GITHUB_LOGIN": "rainermu85-blip"
+  },
+  "observability": { "enabled": false }
+}
